@@ -18,6 +18,7 @@ package com.lmax.disruptor;
 /**
  * Coordinates claiming sequences for access to a data structure while tracking dependent {@link Sequence}s
  */
+// 序列器接口
 public interface Sequencer extends Cursored, Sequenced
 {
     /**

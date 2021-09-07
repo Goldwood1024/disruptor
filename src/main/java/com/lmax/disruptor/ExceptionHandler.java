@@ -18,6 +18,7 @@ package com.lmax.disruptor;
 /**
  * Callback handler for uncaught exceptions in the event processing cycle of the {@link BatchEventProcessor}
  */
+// 异常处理器
 public interface ExceptionHandler<T>
 {
     /**

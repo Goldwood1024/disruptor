@@ -21,6 +21,7 @@ package com.lmax.disruptor;
  * add/remove of Sequences from a
  * {@link SequenceGroups#addSequences(Object, java.util.concurrent.atomic.AtomicReferenceFieldUpdater, Cursored, Sequence...)}.
  */
+// 光标
 public interface Cursored
 {
     /**
@@ -28,5 +29,6 @@ public interface Cursored
      *
      * @return current cursor value
      */
+    // 光标位置
     long getCursor();
 }

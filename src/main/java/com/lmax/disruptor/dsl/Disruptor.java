@@ -56,12 +56,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @param <T> the type of event used.
  */
+// 核心类
 public class Disruptor<T>
 {
+    // 队列
     private final RingBuffer<T> ringBuffer;
+    // 线程池
     private final Executor executor;
+    // 消费者容器
     private final ConsumerRepository<T> consumerRepository = new ConsumerRepository<>();
+    // 是否启动
     private final AtomicBoolean started = new AtomicBoolean(false);
+    // 异常处理器
     private ExceptionHandler<? super T> exceptionHandler = new ExceptionHandlerWrapper<>();
 
     /**
@@ -134,7 +140,9 @@ public class Disruptor<T>
             final WaitStrategy waitStrategy)
     {
         this(
+                // RingBuffer
             RingBuffer.create(producerType, eventFactory, ringBufferSize, waitStrategy),
+            // 线程池
             new BasicExecutor(threadFactory));
     }
 
@@ -260,6 +268,7 @@ public class Disruptor<T>
     @SuppressWarnings("unchecked")
     public void setDefaultExceptionHandler(final ExceptionHandler<? super T> exceptionHandler)
     {
+        // 检查是否已启动队列
         checkNotStarted();
         if (!(this.exceptionHandler instanceof ExceptionHandlerWrapper))
         {
@@ -551,11 +560,14 @@ public class Disruptor<T>
     {
         checkNotStarted();
 
+        // 事件
         final Sequence[] processorSequences = new Sequence[eventHandlers.length];
+        // 屏障
         final SequenceBarrier barrier = ringBuffer.newBarrier(barrierSequences);
 
         for (int i = 0, eventHandlersLength = eventHandlers.length; i < eventHandlersLength; i++)
         {
+            // 事件
             final EventHandler<? super T> eventHandler = eventHandlers[i];
 
             final BatchEventProcessor<T> batchEventProcessor =

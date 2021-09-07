@@ -5,6 +5,7 @@ import com.lmax.disruptor.ExceptionHandlers;
 
 public class ExceptionHandlerWrapper<T> implements ExceptionHandler<T>
 {
+    // 委托模式
     private ExceptionHandler<? super T> delegate;
 
     public void switchTo(final ExceptionHandler<? super T> exceptionHandler)

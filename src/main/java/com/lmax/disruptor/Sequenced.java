@@ -1,5 +1,6 @@
 package com.lmax.disruptor;
 
+// 测序
 public interface Sequenced
 {
     /**
@@ -7,6 +8,7 @@ public interface Sequenced
      *
      * @return the size of the RingBuffer.
      */
+    // 队列的容量
     int getBufferSize();
 
     /**

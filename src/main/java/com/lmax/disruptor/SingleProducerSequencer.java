@@ -19,6 +19,7 @@ import java.util.concurrent.locks.LockSupport;
 
 import com.lmax.disruptor.util.Util;
 
+// 填充
 abstract class SingleProducerSequencerPad extends AbstractSequencer
 {
     protected long p1, p2, p3, p4, p5, p6, p7;
@@ -29,6 +30,7 @@ abstract class SingleProducerSequencerPad extends AbstractSequencer
     }
 }
 
+// 字段
 abstract class SingleProducerSequencerFields extends SingleProducerSequencerPad
 {
     SingleProducerSequencerFields(int bufferSize, WaitStrategy waitStrategy)
@@ -39,6 +41,7 @@ abstract class SingleProducerSequencerFields extends SingleProducerSequencerPad
     /**
      * Set to -1 as sequence starting point
      */
+    // 初始值 -1
     long nextValue = Sequence.INITIAL_VALUE;
     long cachedValue = Sequence.INITIAL_VALUE;
 }
@@ -50,7 +53,7 @@ abstract class SingleProducerSequencerFields extends SingleProducerSequencerPad
  * <p>* Note on {@link Sequencer#getCursor()}:  With this sequencer the cursor value is updated after the call
  * to {@link Sequencer#publish(long)} is made.</p>
  */
-
+// 单事件生产者实现类
 public final class SingleProducerSequencer extends SingleProducerSequencerFields
 {
     protected long p1, p2, p3, p4, p5, p6, p7;

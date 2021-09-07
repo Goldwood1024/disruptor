@@ -21,20 +21,25 @@ import sun.misc.Unsafe;
 import com.lmax.disruptor.dsl.ProducerType;
 import com.lmax.disruptor.util.Util;
 
+// 缓存行填充
 abstract class RingBufferPad
 {
     protected long p1, p2, p3, p4, p5, p6, p7;
 }
 
+// 队列字段
 abstract class RingBufferFields<E> extends RingBufferPad
 {
+    // 缓存
     private static final int BUFFER_PAD;
     private static final long REF_ARRAY_BASE;
     private static final int REF_ELEMENT_SHIFT;
+    // unsafe 类
     private static final Unsafe UNSAFE = Util.getUnsafe();
 
     static
     {
+        // arrayIndexScale 获取数组中元素的增量地址
         final int scale = UNSAFE.arrayIndexScale(Object[].class);
         if (4 == scale)
         {
@@ -50,12 +55,16 @@ abstract class RingBufferFields<E> extends RingBufferPad
         }
         BUFFER_PAD = 128 / scale;
         // Including the buffer pad in the array base offset
+        // arrayBaseOffset，获取数组第一个元素的偏移地址
         REF_ARRAY_BASE = UNSAFE.arrayBaseOffset(Object[].class) + (BUFFER_PAD << REF_ELEMENT_SHIFT);
     }
 
     private final long indexMask;
+    // 队列元素
     private final Object[] entries;
+    // 大小
     protected final int bufferSize;
+    // 事件生产者的实现接口 两种不同的模式SingleProducerSequencer/MultiProducerSequencer
     protected final Sequencer sequencer;
 
     RingBufferFields(
@@ -69,18 +78,21 @@ abstract class RingBufferFields<E> extends RingBufferPad
         {
             throw new IllegalArgumentException("bufferSize must not be less than 1");
         }
+        // 判断是否是2的倍数 使用位运算提高性能
         if (Integer.bitCount(bufferSize) != 1)
         {
             throw new IllegalArgumentException("bufferSize must be a power of 2");
         }
 
         this.indexMask = bufferSize - 1;
+        // 创建队列数组
         this.entries = new Object[sequencer.getBufferSize() + 2 * BUFFER_PAD];
         fill(eventFactory);
     }
 
     private void fill(EventFactory<E> eventFactory)
     {
+        // 预创建事件
         for (int i = 0; i < bufferSize; i++)
         {
             entries[BUFFER_PAD + i] = eventFactory.newInstance();
@@ -100,6 +112,7 @@ abstract class RingBufferFields<E> extends RingBufferPad
  *
  * @param <E> implementation storing the data for sharing during exchange or parallel coordination of an event.
  */
+// 环形队列
 public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored, EventSequencer<E>, EventSink<E>
 {
     public static final long INITIAL_CURSOR_VALUE = Sequence.INITIAL_VALUE;
@@ -166,6 +179,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * @throws IllegalArgumentException if bufferSize is less than 1 or not a power of 2
      * @see SingleProducerSequencer
      */
+    // 单事件生产者
     public static <E> RingBuffer<E> createSingleProducer(
         EventFactory<E> factory,
         int bufferSize,

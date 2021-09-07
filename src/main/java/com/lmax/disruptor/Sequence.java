@@ -43,8 +43,10 @@ class RhsPadding extends Value
  * <p>Also attempts to be more efficient with regards to false
  * sharing by adding padding around the volatile field.
  */
+// 序列器
 public class Sequence extends RhsPadding
 {
+    // 初始值
     static final long INITIAL_VALUE = -1L;
     private static final Unsafe UNSAFE;
     private static final long VALUE_OFFSET;
