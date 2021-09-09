@@ -26,6 +26,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * is started and just before the thread is shutdown.
  *
  * @param <T> event implementation storing the data for sharing during exchange or parallel coordination of an event.
+ *
+ * 每个EventHandler对应一个EventProcessor执行者，BatchEventProcessor每次大循环可以获取最高可用序号，并循环调用EventHandler
  */
 public final class BatchEventProcessor<T>
     implements EventProcessor
@@ -156,19 +158,21 @@ public final class BatchEventProcessor<T>
         {
             try
             {
+                // availableSequence返回的是可用的最大值
                 final long availableSequence = sequenceBarrier.waitFor(nextSequence);
                 if (batchStartAware != null)
                 {
                     batchStartAware.onBatchStart(availableSequence - nextSequence + 1);
                 }
 
+                // 批处理在此处得以体现
                 while (nextSequence <= availableSequence)
                 {
                     event = dataProvider.get(nextSequence);
                     eventHandler.onEvent(event, nextSequence, nextSequence == availableSequence);
                     nextSequence++;
                 }
-
+                // eventHandler处理完毕后，更新当前序号
                 sequence.set(availableSequence);
             }
             catch (final TimeoutException e)

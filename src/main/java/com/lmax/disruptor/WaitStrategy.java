@@ -43,6 +43,7 @@ public interface WaitStrategy
 
     /**
      * Implementations should signal the waiting {@link EventProcessor}s that the cursor has advanced.
+     * 当生产者发布新事件后，将通知等待的EventProcessor。当用锁机制时才会包含相应逻辑
      */
     void signalAllWhenBlocking();
 }
