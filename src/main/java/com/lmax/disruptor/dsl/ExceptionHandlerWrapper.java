@@ -3,6 +3,7 @@ package com.lmax.disruptor.dsl;
 import com.lmax.disruptor.ExceptionHandler;
 import com.lmax.disruptor.ExceptionHandlers;
 
+// 异常处理器包装类
 public class ExceptionHandlerWrapper<T> implements ExceptionHandler<T>
 {
     // 委托模式

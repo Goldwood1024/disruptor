@@ -23,7 +23,7 @@ import java.util.*;
  * Provides a repository mechanism to associate {@link EventHandler}s with {@link EventProcessor}s
  *
  * @param <T> the type of the {@link EventHandler}
- *  主要保存消费者的各种关系
+ * 提供一个存储库机制来关联eventhandler和EventProcessors
  */
 class ConsumerRepository<T> implements Iterable<ConsumerInfo>
 {
@@ -38,6 +38,7 @@ class ConsumerRepository<T> implements Iterable<ConsumerInfo>
         final EventHandler<? super T> handler,
         final SequenceBarrier barrier)
     {
+        // 把eventprocessor handler barrier 关联起来
         final EventProcessorInfo<T> consumerInfo = new EventProcessorInfo<>(eventprocessor, handler, barrier);
         eventProcessorInfoByEventHandler.put(handler, consumerInfo);
         eventProcessorInfoBySequence.put(eventprocessor.getSequence(), consumerInfo);

@@ -206,7 +206,9 @@ public final class SingleProducerSequencer extends SingleProducerSequencerFields
     @Override
     public void publish(long sequence)
     {
+        // 设置游标
         cursor.set(sequence);
+        // 唤醒线程
         waitStrategy.signalAllWhenBlocking();
     }
 

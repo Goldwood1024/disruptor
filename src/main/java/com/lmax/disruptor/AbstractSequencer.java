@@ -24,15 +24,22 @@ import com.lmax.disruptor.util.Util;
  * Base class for the various sequencer types (single/multi).  Provides
  * common functionality like the management of gating sequences (add/remove) and
  * ownership of the current cursor.
+ *
+ * 用于各种排序器类型(单/多)的基类。
+ * 提供常见的功能，如管理门控序列(添加/删除)和当前游标的所有权。
  */
 public abstract class AbstractSequencer implements Sequencer
 {
     private static final AtomicReferenceFieldUpdater<AbstractSequencer, Sequence[]> SEQUENCE_UPDATER =
         AtomicReferenceFieldUpdater.newUpdater(AbstractSequencer.class, Sequence[].class, "gatingSequences");
 
+    // 环形队列容量
     protected final int bufferSize;
+    // 等待策略
     protected final WaitStrategy waitStrategy;
+    // 游标初始值
     protected final Sequence cursor = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
+    // 初始Sequence
     protected volatile Sequence[] gatingSequences = new Sequence[0];
 
     /**
@@ -58,6 +65,7 @@ public abstract class AbstractSequencer implements Sequencer
 
     /**
      * @see Sequencer#getCursor()
+     * 获取游标
      */
     @Override
     public final long getCursor()
@@ -67,6 +75,7 @@ public abstract class AbstractSequencer implements Sequencer
 
     /**
      * @see Sequencer#getBufferSize()
+     * 获取队列容量
      */
     @Override
     public final int getBufferSize()
@@ -103,10 +112,13 @@ public abstract class AbstractSequencer implements Sequencer
 
     /**
      * @see Sequencer#newBarrier(Sequence...)
+     *
+     * 创建屏障
      */
     @Override
     public SequenceBarrier newBarrier(Sequence... sequencesToTrack)
     {
+        // 执行序列屏障
         return new ProcessingSequenceBarrier(this, waitStrategy, cursor, sequencesToTrack);
     }
 

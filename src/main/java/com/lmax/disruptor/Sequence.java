@@ -27,6 +27,7 @@ class LhsPadding
 
 class Value extends LhsPadding
 {
+    // 内存可见性
     protected volatile long value;
 }
 
@@ -43,7 +44,9 @@ class RhsPadding extends Value
  * <p>Also attempts to be more efficient with regards to false
  * sharing by adding padding around the volatile field.
  */
-// 序列器
+// 序列器 提供序列器的原子操作
+// 并发序列类，用于跟踪环形队列和事件处理器的进程。支持大量并发操作，包括CAS和顺序写入。
+// 还尝试通过在volatile字段周围添加填充来提高错误共享的效率(缓存填充)
 public class Sequence extends RhsPadding
 {
     // 初始值
@@ -74,6 +77,7 @@ public class Sequence extends RhsPadding
 
     /**
      * Create a sequence with a specified initial value.
+     * 使用指定的初始值创建序列
      *
      * @param initialValue The initial value for this sequence.
      */
@@ -86,6 +90,7 @@ public class Sequence extends RhsPadding
      * Perform a volatile read of this sequence's value.
      *
      * @return The current value of the sequence.
+     * 对该序列的值执行volatile读操作
      */
     public long get()
     {
@@ -96,6 +101,8 @@ public class Sequence extends RhsPadding
      * Perform an ordered write of this sequence.  The intent is
      * a Store/Store barrier between this write and any previous
      * store.
+     *
+     * 执行此序列的有序写操作。目的是在这次写入和之前的任何存储之间设置一个Store/Store障碍
      *
      * @param value The new value for the sequence.
      */
@@ -123,6 +130,8 @@ public class Sequence extends RhsPadding
      * @param expectedValue The expected current value.
      * @param newValue The value to update to.
      * @return true if the operation succeeds, false otherwise.
+     *
+     * cms
      */
     public boolean compareAndSet(final long expectedValue, final long newValue)
     {
@@ -133,6 +142,7 @@ public class Sequence extends RhsPadding
      * Atomically increment the sequence by one.
      *
      * @return The value after the increment
+     * 自增
      */
     public long incrementAndGet()
     {

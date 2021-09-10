@@ -56,16 +56,19 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @param <T> the type of event used.
  */
-// 核心类
+
+/**
+ * 一个dsl风格的API，用于围绕环形缓冲区设置disruptor模式(也称为Builder模式)。
+ */
 public class Disruptor<T>
 {
-    // 队列
+    // 环形队列
     private final RingBuffer<T> ringBuffer;
     // 线程池
     private final Executor executor;
-    // 消费者容器
+    // 事件处理器仓库
     private final ConsumerRepository<T> consumerRepository = new ConsumerRepository<>();
-    // 是否启动
+    // 是否启动 默认false
     private final AtomicBoolean started = new AtomicBoolean(false);
     // 异常处理器
     private ExceptionHandler<? super T> exceptionHandler = new ExceptionHandlerWrapper<>();
@@ -127,10 +130,15 @@ public class Disruptor<T>
      * Create a new Disruptor.
      *
      * @param eventFactory   the factory to create events in the ring buffer.
+     *                       事件工厂
      * @param ringBufferSize the size of the ring buffer, must be power of 2.
+     *                       环形队列的容量 2的倍数
      * @param threadFactory  a {@link ThreadFactory} to create threads for processors.
+     *                       线程工厂
      * @param producerType   the claim strategy to use for the ring buffer.
+     *                       生产方式
      * @param waitStrategy   the wait strategy to use for the ring buffer.
+     *                       等待策略
      */
     public Disruptor(
             final EventFactory<T> eventFactory,
@@ -139,10 +147,10 @@ public class Disruptor<T>
             final ProducerType producerType,
             final WaitStrategy waitStrategy)
     {
+        // 1. 创建队列
+        // 2. 创建线程池
         this(
-                // RingBuffer
             RingBuffer.create(producerType, eventFactory, ringBufferSize, waitStrategy),
-            // 线程池
             new BasicExecutor(threadFactory));
     }
 
@@ -167,6 +175,9 @@ public class Disruptor<T>
      *
      * @param handlers the event handlers that will process events.
      * @return a {@link EventHandlerGroup} that can be used to chain dependencies.
+     *
+     * 设置事件处理程序来处理来环形队列的事件。这些处理程序将在事件可用时并行地处理它们。
+     * 这种方法可以用作链的起始
      */
     @SuppressWarnings("varargs")
     @SafeVarargs
@@ -402,6 +413,9 @@ public class Disruptor<T>
      *
      * <p>This method must only be called once after all event processors have been added.</p>
      *
+     * 启动事件处理器并返回完全配置的队列。
+     * 队列的设置是为了防止覆盖任何尚未由最慢的事件处理器处理的条目。
+     * 在添加了所有事件处理器之后，只能调用此方法一次。
      * @return the configured ring buffer.
      */
     public RingBuffer<T> start()
@@ -475,6 +489,7 @@ public class Disruptor<T>
      * The {@link RingBuffer} used by this Disruptor.  This is useful for creating custom
      * event processors if the behaviour of {@link BatchEventProcessor} is not suitable.
      *
+     * 获取队列
      * @return the ring buffer used by this Disruptor.
      */
     public RingBuffer<T> getRingBuffer()
@@ -485,6 +500,7 @@ public class Disruptor<T>
     /**
      * Get the value of the cursor indicating the published sequence.
      *
+     * 游标
      * @return value of the cursor for events that have been published.
      */
     public long getCursor()
@@ -495,6 +511,7 @@ public class Disruptor<T>
     /**
      * The capacity of the data structure to hold entries.
      *
+     * 队列大小
      * @return the size of the RingBuffer.
      * @see com.lmax.disruptor.Sequencer#getBufferSize()
      */
@@ -505,7 +522,7 @@ public class Disruptor<T>
 
     /**
      * Get the event for a given sequence in the RingBuffer.
-     *
+     * 等价 ringBuffer.get()
      * @param sequence for the event.
      * @return event for the sequence.
      * @see RingBuffer#get(long)
@@ -561,24 +578,27 @@ public class Disruptor<T>
         final Sequence[] barrierSequences,
         final EventHandler<? super T>[] eventHandlers)
     {
+        // 检查是否启动
         checkNotStarted();
 
-        // 对应此事件处理器组的序列组
+        // 对应此事件处理器组的序列数组 默认值-1
         final Sequence[] processorSequences = new Sequence[eventHandlers.length];
         // 屏障
         final SequenceBarrier barrier = ringBuffer.newBarrier(barrierSequences);
 
+        // 循环添加
         for (int i = 0, eventHandlersLength = eventHandlers.length; i < eventHandlersLength; i++)
         {
-            // 事件
+            // 时间处理器
             final EventHandler<? super T> eventHandler = eventHandlers[i];
 
-            // 批量处理事件的循环
+            // 创建事件执行线程，把队列和事件处理器关联起来
             final BatchEventProcessor<T> batchEventProcessor =
                 new BatchEventProcessor<>(ringBuffer, barrier, eventHandler);
 
             if (exceptionHandler != null)
             {
+                // 设置异常处理器
                 batchEventProcessor.setExceptionHandler(exceptionHandler);
             }
 
@@ -589,6 +609,7 @@ public class Disruptor<T>
         // 每次添加完事件处理器后，更新门控序列，以便后续调用链的添加。（所谓门控，是指后续消费链的消费，不能超过前边。）
         updateGatingSequencesForNextInChain(barrierSequences, processorSequences);
 
+        // 创建事件组
         return new EventHandlerGroup<>(this, consumerRepository, processorSequences);
     }
 
@@ -638,6 +659,7 @@ public class Disruptor<T>
 
     private void checkNotStarted()
     {
+        // 是否未启动
         if (started.get())
         {
             throw new IllegalStateException("All event handlers must be added before calling starts.");
@@ -646,6 +668,7 @@ public class Disruptor<T>
 
     private void checkOnlyStartedOnce()
     {
+        // 检查是否已启动
         if (!started.compareAndSet(false, true))
         {
             throw new IllegalStateException("Disruptor.start() must only be called once.");

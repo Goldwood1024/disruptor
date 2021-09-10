@@ -71,7 +71,9 @@ abstract class RingBufferFields<E> extends RingBufferPad
         EventFactory<E> eventFactory,
         Sequencer sequencer)
     {
+        // sequencer
         this.sequencer = sequencer;
+        // 获取队列大小
         this.bufferSize = sequencer.getBufferSize();
 
         if (bufferSize < 1)
@@ -92,7 +94,7 @@ abstract class RingBufferFields<E> extends RingBufferPad
 
     private void fill(EventFactory<E> eventFactory)
     {
-        // 预创建事件
+        // 使用事件工厂创建事件
         for (int i = 0; i < bufferSize; i++)
         {
             entries[BUFFER_PAD + i] = eventFactory.newInstance();
@@ -185,6 +187,8 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
         int bufferSize,
         WaitStrategy waitStrategy)
     {
+        // 创建 SingleProducerSequencer
+        // 序列器的协调类
         SingleProducerSequencer sequencer = new SingleProducerSequencer(bufferSize, waitStrategy);
 
         return new RingBuffer<E>(factory, sequencer);
@@ -222,6 +226,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
         int bufferSize,
         WaitStrategy waitStrategy)
     {
+        // 创建环形队列 两个实现方式
         switch (producerType)
         {
             case SINGLE:
@@ -879,6 +884,8 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
     /**
      * Publish the specified sequence.  This action marks this particular
      * message as being available to be read.
+     *
+     * 发布指定的序列。此操作将此特定消息标记为可读取。
      *
      * @param sequence the sequence to publish.
      */
