@@ -20,6 +20,7 @@ package com.lmax.disruptor;
  *
  * @param <T> event implementation storing the data for sharing during exchange or parallel coordination of an event.
  * @see BatchEventProcessor#setExceptionHandler(ExceptionHandler) if you want to handle exceptions propagated out of the handler.
+当事件在{@link RingBuffer}中可用时，将实现用于处理事件的回调接口
  */
 // 事件定义 处理事件的回调接口
 public interface EventHandler<T>
@@ -35,6 +36,7 @@ public interface EventHandler<T>
      * @param event      published to the {@link RingBuffer}
      * @param sequence   of the event being processed
      * @param endOfBatch flag to indicate if this is the last event in a batch from the {@link RingBuffer}
+     *                   标志来指示这是否是来自{@link RingBuffer}的批处理中的最后一个事件
      * @throws Exception if the EventHandler would like the exception handled further up the chain.
      */
     void onEvent(T event, long sequence, boolean endOfBatch) throws Exception;

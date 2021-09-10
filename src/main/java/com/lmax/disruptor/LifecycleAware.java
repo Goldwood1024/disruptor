@@ -18,11 +18,13 @@ package com.lmax.disruptor;
 /**
  * Implement this interface in your {@link EventHandler} to be notified when a thread for the
  * {@link BatchEventProcessor} starts and shuts down.
+ * EventHandler 生命周期
  */
 public interface LifecycleAware
 {
     /**
      * Called once on thread start before first event is available.
+     * 在线程启动时，在第一个事件可用之前调用一次
      */
     void onStart();
 
@@ -31,6 +33,9 @@ public interface LifecycleAware
      * <p>
      * Sequence event processing will already have stopped before this method is called. No events will
      * be processed after this message.
+     *
+     * 在线程关闭之前调用一次。
+     * 在调用此方法之前，序列事件处理将已经停止。此消息之后将不处理任何事件。
      */
     void onShutdown();
 }

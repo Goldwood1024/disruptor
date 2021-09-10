@@ -16,6 +16,8 @@
 package com.lmax.disruptor;
 
 /** Provides static methods for accessing a default {@link ExceptionHandler} object. */
+
+// 创建默认的时间处理器
 public final class ExceptionHandlers
 {
 
@@ -23,6 +25,8 @@ public final class ExceptionHandlers
      * Get a reference to the default {@link ExceptionHandler} instance.
      *
      * @return a reference to the default {@link ExceptionHandler} instance
+     *
+     * 单利
      */
     public static ExceptionHandler<Object> defaultHandler()
     {

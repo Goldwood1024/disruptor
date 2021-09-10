@@ -20,6 +20,7 @@ package com.lmax.disruptor;
  *
  * @param <T> event implementation storing the data for sharing during exchange or parallel coordination of an event.
  * @see WorkerPool
+ * 事件回调接口
  */
 public interface WorkHandler<T>
 {
@@ -28,6 +29,7 @@ public interface WorkHandler<T>
      *
      * @param event published to the {@link RingBuffer}
      * @throws Exception if the {@link WorkHandler} would like the exception handled further up the chain.
+     * 回调方法
      */
     void onEvent(T event) throws Exception;
 }

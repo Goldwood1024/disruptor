@@ -32,16 +32,26 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class BatchEventProcessor<T>
     implements EventProcessor
 {
+    // 空闲状态
     private static final int IDLE = 0;
+    // 暂停状态
     private static final int HALTED = IDLE + 1;
+    // 运行状态
     private static final int RUNNING = HALTED + 1;
 
+    // 线程实际运行状态
     private final AtomicInteger running = new AtomicInteger(IDLE);
+    // 异常处理器
     private ExceptionHandler<? super T> exceptionHandler;
+    // RingBuffer
     private final DataProvider<T> dataProvider;
+    // 序列器屏障
     private final SequenceBarrier sequenceBarrier;
+    // 事件处理器
     private final EventHandler<? super T> eventHandler;
+    // 消费者 sequence
     private final Sequence sequence = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
+    // 超时处理器
     private final TimeoutHandler timeoutHandler;
     private final BatchStartAware batchStartAware;
 
@@ -58,8 +68,11 @@ public final class BatchEventProcessor<T>
         final SequenceBarrier sequenceBarrier,
         final EventHandler<? super T> eventHandler)
     {
+        // 指定RingBuffer
         this.dataProvider = dataProvider;
+        // 屏障
         this.sequenceBarrier = sequenceBarrier;
+        // 事件处理器
         this.eventHandler = eventHandler;
 
         if (eventHandler instanceof SequenceReportingEventHandler)
@@ -82,6 +95,7 @@ public final class BatchEventProcessor<T>
     @Override
     public void halt()
     {
+        // 更新状态为暂停
         running.set(HALTED);
         sequenceBarrier.alert();
     }
@@ -96,6 +110,7 @@ public final class BatchEventProcessor<T>
      * Set a new {@link ExceptionHandler} for handling exceptions propagated out of the {@link BatchEventProcessor}
      *
      * @param exceptionHandler to replace the existing exceptionHandler.
+     *                         设置异常处理器
      */
     public void setExceptionHandler(final ExceptionHandler<? super T> exceptionHandler)
     {
@@ -111,17 +126,21 @@ public final class BatchEventProcessor<T>
      * It is ok to have another thread rerun this method after a halt().
      *
      * @throws IllegalStateException if this object instance is already running in a thread
+     * 可以让另一个线程在halt()之后重新运行这个方法
      */
     @Override
     public void run()
     {
+        // 更新状态为运行 空闲->运行
         if (running.compareAndSet(IDLE, RUNNING))
         {
             sequenceBarrier.clearAlert();
 
+            // 启动通知
             notifyStart();
             try
             {
+                // 判断是否运行状态
                 if (running.get() == RUNNING)
                 {
                     processEvents();
@@ -129,7 +148,9 @@ public final class BatchEventProcessor<T>
             }
             finally
             {
+                // 停止通知
                 notifyShutdown();
+                // 更新为空闲
                 running.set(IDLE);
             }
         }
@@ -152,31 +173,38 @@ public final class BatchEventProcessor<T>
     private void processEvents()
     {
         T event = null;
+        // 从当前sequence后移一个进行消费
         long nextSequence = sequence.get() + 1L;
 
         while (true)
         {
             try
             {
-                // availableSequence返回的是可用的最大值
+                // availableSequence 返回的是可用的最大值
                 final long availableSequence = sequenceBarrier.waitFor(nextSequence);
                 if (batchStartAware != null)
                 {
                     batchStartAware.onBatchStart(availableSequence - nextSequence + 1);
                 }
 
-                // 批处理在此处得以体现
+                // 批量执行待消费的事件
                 while (nextSequence <= availableSequence)
                 {
+                    // 取出事件
                     event = dataProvider.get(nextSequence);
+                    // 调用消费者
                     eventHandler.onEvent(event, nextSequence, nextSequence == availableSequence);
+
+                    // 取下一个事件
                     nextSequence++;
                 }
+
                 // eventHandler处理完毕后，更新当前序号
                 sequence.set(availableSequence);
             }
             catch (final TimeoutException e)
             {
+                // 超时通知
                 notifyTimeout(sequence.get());
             }
             catch (final AlertException ex)
@@ -188,8 +216,12 @@ public final class BatchEventProcessor<T>
             }
             catch (final Throwable ex)
             {
+                // 调用异常处理器，可以抛出异常
                 handleEventException(ex, nextSequence, event);
+
+                // 若无新的异常抛出，则更新sequence
                 sequence.set(nextSequence);
+                // 发生异常事件不在重复消费
                 nextSequence++;
             }
         }
@@ -207,6 +239,7 @@ public final class BatchEventProcessor<T>
         {
             if (timeoutHandler != null)
             {
+                // 超时处理器存在则调用
                 timeoutHandler.onTimeout(availableSequence);
             }
         }
@@ -218,6 +251,7 @@ public final class BatchEventProcessor<T>
 
     /**
      * Notifies the EventHandler when this processor is starting up
+     * 当处理器启动时通知EventHandler
      */
     private void notifyStart()
     {
@@ -236,6 +270,7 @@ public final class BatchEventProcessor<T>
 
     /**
      * Notifies the EventHandler immediately prior to this processor shutting down
+     * 在处理器关闭之前立即通知EventHandler
      */
     private void notifyShutdown()
     {
@@ -255,6 +290,7 @@ public final class BatchEventProcessor<T>
     /**
      * Delegate to {@link ExceptionHandler#handleEventException(Throwable, long, Object)} on the delegate or
      * the default {@link ExceptionHandler} if one has not been configured.
+     * 委托给异常处理器处理， 如果没有配置处理器 则使用默认的异常处理器(FatalExceptionHandler)
      */
     private void handleEventException(final Throwable ex, final long sequence, final T event)
     {
@@ -279,6 +315,10 @@ public final class BatchEventProcessor<T>
         getExceptionHandler().handleOnShutdownException(ex);
     }
 
+    /**
+     * 获取异常处理器 没有配置取默认的处理器
+     * @return
+     */
     private ExceptionHandler<? super T> getExceptionHandler()
     {
         ExceptionHandler<? super T> handler = exceptionHandler;

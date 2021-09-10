@@ -21,6 +21,8 @@ import java.util.logging.Logger;
 /**
  * Convenience implementation of an exception handler that using standard JDK logging to log
  * the exception as {@link Level}.SEVERE and re-throw it wrapped in a {@link RuntimeException}
+ *
+ * 一个异常处理程序的方便实现，使用标准的JDK日志记录异常为{@link Level}。然后用{@link RuntimeException}重新抛出
  */
 // 异常处理器 - 向外抛出异常
 public final class FatalExceptionHandler implements ExceptionHandler<Object>

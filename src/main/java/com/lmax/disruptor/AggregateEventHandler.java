@@ -19,10 +19,14 @@ package com.lmax.disruptor;
  * An aggregate collection of {@link EventHandler}s that get called in sequence for each event.
  *
  * @param <T> event implementation storing the data for sharing during exchange or parallel coordination of an event.
+ *
+ * 为每个事件依次调用的集合
+ * 用户逻辑
  */
 public final class AggregateEventHandler<T>
     implements EventHandler<T>, LifecycleAware
 {
+    // 执行器数组
     private final EventHandler<T>[] eventHandlers;
 
     /**
@@ -53,6 +57,7 @@ public final class AggregateEventHandler<T>
         {
             if (eventHandler instanceof LifecycleAware)
             {
+                // 调用 onStart
                 ((LifecycleAware) eventHandler).onStart();
             }
         }
